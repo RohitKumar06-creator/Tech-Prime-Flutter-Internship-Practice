@@ -1,7 +1,7 @@
 // Loops In Dart
 import 'dart:io';
 /*
-There are three types of loops in Dart:
+There are three types of loops in Dart: 
 1. For Loop: Used to execute a block of code a specific number of times.
 2. While Loop: Used to execute a block of code as long as a specified condition is true.
 3. Do-While Loop: Used to execute a block of code at least once, and then continue executing it as long as a specified condition is true.
@@ -36,4 +36,5 @@ void main() {
       print("Please enter a positive number.");
     }
   } while (k < 0);
+  // This marks the end of loop practice
 }
