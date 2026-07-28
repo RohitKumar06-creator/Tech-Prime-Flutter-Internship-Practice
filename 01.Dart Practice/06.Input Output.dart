@@ -28,7 +28,7 @@ void main() {
   }
 }
 
-  print("====== User Information ======= ");
+  print("======= User Information ======== ");
   print("Name        : $name");
   print("Age         : $age");
   print("Height      : $height cm");
