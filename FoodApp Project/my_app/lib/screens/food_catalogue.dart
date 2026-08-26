@@ -7,6 +7,7 @@ import '../widgets/categories_section.dart';
 import '../widgets/popular_section.dart';
 import '../widgets/location_bar.dart';
 import '../widgets/custom_bottom_nav_bar.dart';
+import '../screens/shopping_cart_screen.dart';
 
 class FoodCatalogue extends StatefulWidget {
   const FoodCatalogue({super.key});
@@ -74,12 +75,23 @@ class _FoodCatalogueState extends State<FoodCatalogue> {
       ),
 
       // Extracted Bottom Navigation Widget
+      // Inside lib/screens/food_catalogue.dart
       bottomNavigationBar: CustomBottomNavBar(
         currentIndex: _selectedIndex,
         onTap: (index) {
-          setState(() {
-            _selectedIndex = index;
-          });
+          if (index == 2) {
+            // Index 2 is Cart
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const ShoppingCartScreen(),
+              ),
+            );
+          } else {
+            setState(() {
+              _selectedIndex = index;
+            });
+          }
         },
       ),
     );

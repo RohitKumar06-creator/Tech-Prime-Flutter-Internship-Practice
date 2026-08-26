@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'food_catalogue.dart';
 
-// Extracted Widgets
 import '../widgets/login_header_widget.dart';
 import '../widgets/google_login_button.dart';
 
@@ -33,7 +32,7 @@ class LoginScreen extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const SizedBox(height: 68),
+                    const SizedBox(height: 10),
 
                     Text(
                       'Welcome back',

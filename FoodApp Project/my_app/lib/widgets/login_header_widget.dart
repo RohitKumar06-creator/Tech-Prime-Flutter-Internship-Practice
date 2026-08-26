@@ -7,33 +7,23 @@ class LoginHeaderImage extends StatelessWidget {
   Widget build(BuildContext context) {
     return SizedBox(
       width: double.infinity,
-      height: 360,
-      child: Stack(
-        children: [
-          Positioned.fill(
-            child: Image.asset(
-              'assets/images/Login2.png',
-              fit: BoxFit.fitWidth,
-            ),
-          ),
-          Positioned.fill(
-            child: Container(
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  stops: [0.55, 0.75, 0.90, 1.0],
-                  colors: [
-                    Colors.transparent,
-                    Colors.transparent,
-                    Color(0xCCFAFAFA),
-                    Color(0xFFFAFAFA),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ],
+      height: 380,
+      child: ShaderMask(
+        shaderCallback: (rect) {
+          return const LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            stops: [0.0, 0.6, 0.95, 1.0],
+            colors: [
+              Colors.black,
+              Colors.black,
+              Colors.transparent,
+              Colors.transparent,
+            ],
+          ).createShader(rect);
+        },
+        blendMode: BlendMode.dstIn,
+        child: Image.asset('assets/images/Login2.png', fit: BoxFit.cover),
       ),
     );
   }

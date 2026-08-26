@@ -37,7 +37,7 @@ class CustomBottomNavBar extends StatelessWidget {
           fontWeight: FontWeight.w500,
         ),
         items: [
-          // Home Tab (with conditional red circle background when active)
+          // Home Tab
           BottomNavigationBarItem(
             icon: currentIndex == 0
                 ? Container(

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'login_screen.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -8,11 +9,7 @@ class SplashScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        width: double.infinity,
-        height: double.infinity,
-        decoration: BoxDecoration(borderRadius: BorderRadius.circular(3)),
-        clipBehavior: Clip.antiAlias,
+      body: SizedBox.expand(
         child: Stack(
           children: [
             // BACKGROUND IMAGE
@@ -50,7 +47,7 @@ class SplashScreen extends StatelessWidget {
 
                   // HEADLINE
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    padding: EdgeInsets.symmetric(horizontal: 24.w),
                     child: Text(
                       '"Delicious Moments,\n'
                       'Delivered to Your\n'
@@ -58,7 +55,7 @@ class SplashScreen extends StatelessWidget {
                       textAlign: TextAlign.center,
                       style: GoogleFonts.montserrat(
                         color: Colors.white,
-                        fontSize: 28,
+                        fontSize: 28.sp,
                         fontWeight: FontWeight.w700,
                         height: 1.4,
                         letterSpacing: 0.2,
@@ -70,14 +67,14 @@ class SplashScreen extends StatelessWidget {
 
                   // GET STARTED BUTTON
                   Padding(
-                    padding: const EdgeInsets.only(
-                      left: 48,
-                      right: 48,
-                      bottom: 32,
+                    padding: EdgeInsets.only(
+                      left: 48.w,
+                      right: 48.w,
+                      bottom: 32.h,
                     ),
                     child: SizedBox(
                       width: double.infinity,
-                      height: 54,
+                      height: 54.h,
                       child: ElevatedButton(
                         onPressed: () {
                           Navigator.push(
@@ -92,13 +89,13 @@ class SplashScreen extends StatelessWidget {
                           foregroundColor: Colors.white,
                           elevation: 0,
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(30),
+                            borderRadius: BorderRadius.circular(30.r),
                           ),
                         ),
                         child: Text(
                           'Get Started',
                           style: GoogleFonts.montserrat(
-                            fontSize: 20,
+                            fontSize: 20.sp,
                             fontWeight: FontWeight.w500,
                           ),
                         ),

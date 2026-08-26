@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../models/food_item.dart';
+import '../screens/product_detail_screen.dart';
 
 class PopularSection extends StatelessWidget {
   PopularSection({super.key});
@@ -69,7 +70,17 @@ class PopularSection extends StatelessWidget {
             final item = foodItems[index];
             return Padding(
               padding: const EdgeInsets.only(bottom: 20),
-              child: PopularFoodCard(item: item),
+              child: GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => ProductDetailScreen(foodItem: item),
+                    ),
+                  );
+                },
+                child: PopularFoodCard(item: item),
+              ),
             );
           },
         ),

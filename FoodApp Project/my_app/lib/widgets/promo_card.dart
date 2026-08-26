@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../models/promo_banner.dart'; // Import the model
+import '../models/promo_banner.dart';
 
 class PromoCard extends StatelessWidget {
   final PromoBanner banner;
