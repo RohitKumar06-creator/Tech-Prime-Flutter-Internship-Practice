@@ -7,6 +7,7 @@ import '../booking/booking_flow_screen.dart';
 import '../notifications/notification_screen.dart';
 import 'widgets/appointment_card.dart';
 import 'widgets/service_item.dart';
+import '../profile/profile_screen.dart'; // Add import
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -24,6 +25,8 @@ class _HomeScreenState extends State<HomeScreen> {
     final List<Widget> screens = [
       const HomeContentView(),
       const AppointmentsScreen(),
+      // const ChatListScreen(),
+      const ProfileScreen(), // Connected Profile Tab
       const Center(
         child: Text(
           'Messages Screen',
