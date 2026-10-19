@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:firebase_auth/firebase_auth.dart';
 
 import 'package:firebase_practice/ui/auth/login_screen.dart';
+import 'package:firebase_practice/ui/firestore/firestore_list_screen.dart';
 import 'package:flutter/material.dart';
 
 class SplashServices {
@@ -15,7 +16,7 @@ class SplashServices {
         const Duration(seconds: 3),
         () => Navigator.push(
           context,
-          MaterialPageRoute(builder: (context) => LoginScreen()),
+          MaterialPageRoute(builder: (context) => FireStoreScreen()),
         ),
       );
     } else {
