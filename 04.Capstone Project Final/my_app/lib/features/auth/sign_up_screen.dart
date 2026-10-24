@@ -1,14 +1,12 @@
-import 'dart:math';
-
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-// import 'package:provider/provider.dart';
+import 'package:provider/provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../../core/constants/app_colors.dart';
-// import '../profile/viewmodels/profile_viewmodel.dart';
+import '../home/home_screen.dart';
+import '../profile/viewmodels/profile_viewmodel.dart';
 import 'login_screen.dart';
-import 'verify_code_screen.dart';
 
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({super.key});
@@ -93,35 +91,39 @@ class _SignUpScreenState extends State<SignUpScreen> {
             password: _passwordController.text.trim(),
           );
 
-      // 2. Generate random 4-digit code
-      final otpCode = (Random().nextInt(9000) + 1000).toString();
       final userEmail = _emailController.text.trim();
+      final username = _usernameController.text.trim();
 
-      // 3. Save OTP to Cloud Firestore 'otps' collection
-      await FirebaseFirestore.instance.collection('otps').doc(userEmail).set({
-        'otp': otpCode,
-        'createdAt': FieldValue.serverTimestamp(),
-      });
-
-      // Debug log to quickly view in VS Code / Android Studio console
-      print('========================================');
-      print('🔑 GENERATED OTP FOR $userEmail: $otpCode');
-      print('========================================');
-
-      // Send built-in verification link
-      await userCredential.user?.sendEmailVerification();
+      // 2. Save user record in Firestore
+      if (userCredential.user != null) {
+        await FirebaseFirestore.instance
+            .collection('users')
+            .doc(userCredential.user!.uid)
+            .set({
+              'username': username,
+              'email': userEmail,
+              'createdAt': FieldValue.serverTimestamp(),
+            });
+      }
 
       if (mounted) {
-        // Navigate to VerifyCodeScreen passing username for Firestore metadata creation
-        Navigator.push(
+        // 3. Initialize ProfileViewModel session
+        final profileViewModel = Provider.of<ProfileViewModel>(
+          context,
+          listen: false,
+        );
+        profileViewModel.loginUser(usernameOrEmail: username);
+
+        // 4. Navigate directly to HomeScreen
+        Navigator.pushAndRemoveUntil(
           context,
           MaterialPageRoute(
-            builder: (_) => VerifyCodeScreen(
-              email: userEmail,
-              expectedOtp: otpCode,
-              username: _usernameController.text.trim(),
+            builder: (_) => ChangeNotifierProvider.value(
+              value: profileViewModel,
+              child: const HomeScreen(),
             ),
           ),
+          (route) => false,
         );
       }
     } on FirebaseAuthException catch (e) {
