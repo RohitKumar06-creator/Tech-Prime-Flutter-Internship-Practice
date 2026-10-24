@@ -8,9 +8,40 @@ class BookingSummaryStep extends StatelessWidget {
 
   const BookingSummaryStep({super.key, required this.viewModel});
 
+  Widget _getBrandLogo(String brand) {
+    final b = brand.toLowerCase();
+    String label = 'VISA';
+    Color color = Colors.indigo;
+
+    if (b.contains('mastercard')) {
+      label = 'MC';
+      color = Colors.deepOrange;
+    } else if (b.contains('amex') || b.contains('american')) {
+      label = 'AMEX';
+      color = Colors.blue.shade800;
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        border: Border.all(color: Colors.grey.shade300),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          fontWeight: FontWeight.bold,
+          fontSize: 12,
+          color: color,
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final doc = viewModel.selectedDoctor;
+    final card = viewModel.selectedCard;
 
     return SingleChildScrollView(
       child: Column(
@@ -121,7 +152,7 @@ class BookingSummaryStep extends StatelessWidget {
           ),
           const SizedBox(height: 24),
 
-          // Payment Info Section
+          // Payment Info Section (Reflects Selected Card)
           const Text(
             'Payment Info',
             style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
@@ -129,33 +160,17 @@ class BookingSummaryStep extends StatelessWidget {
           const SizedBox(height: 12),
           Row(
             children: [
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 8,
-                ),
-                decoration: BoxDecoration(
-                  border: Border.all(color: Colors.grey.shade300),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: const Text(
-                  'VISA',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.indigo,
-                  ),
-                ),
-              ),
+              _getBrandLogo(card?.brand ?? 'Mastercard'),
               const SizedBox(width: 12),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'Visa',
-                    style: TextStyle(fontWeight: FontWeight.bold),
+                  Text(
+                    card?.brand ?? 'Mastercard',
+                    style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
                   Text(
-                    '**** **** **** ${viewModel.selectedCard?.last4 ?? '9812'}',
+                    '**** **** **** ${card?.last4 ?? '0329'}',
                     style: const TextStyle(color: Colors.grey, fontSize: 12),
                   ),
                 ],

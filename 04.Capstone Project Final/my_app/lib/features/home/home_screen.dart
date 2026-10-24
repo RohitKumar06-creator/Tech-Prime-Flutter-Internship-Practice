@@ -2,14 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/constants/app_colors.dart';
+import '../ambulance/ambulance_screen.dart';
 import '../appointments/appointments_screen.dart';
-import '../booking/booking_flow_screen.dart';
 import '../chat/chat_list_screen.dart';
+import '../consultation/consultation_screen.dart';
+import '../medicines/medicines_screen.dart';
 import '../profile/profile_screen.dart';
 import '../profile/viewmodels/profile_viewmodel.dart';
-import '../ambulance/ambulance_screen.dart';
-import '../medicines/medicines_screen.dart';
-import '../consultation/consultation_screen.dart';
+import '../waiting_room/waiting_room_screen.dart'; // Adjust path if your waiting room screen is located elsewhere
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -21,12 +21,22 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int _currentIndex = 0;
 
-  final List<Widget> _screens = [
-    const HomeContentView(),
-    const AppointmentsScreen(),
-    const ChatListScreen(),
-    const ProfileScreen(),
-  ];
+  late final List<Widget> _screens;
+
+  @override
+  void initState() {
+    super.initState();
+    _screens = [
+      HomeContentView(
+        onSeeAllAppointments: () {
+          setState(() => _currentIndex = 1);
+        },
+      ),
+      const AppointmentsScreen(),
+      const ChatListScreen(),
+      const ProfileScreen(),
+    ];
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -81,7 +91,9 @@ class _HomeScreenState extends State<HomeScreen> {
 }
 
 class HomeContentView extends StatelessWidget {
-  const HomeContentView({super.key});
+  final VoidCallback onSeeAllAppointments;
+
+  const HomeContentView({super.key, required this.onSeeAllAppointments});
 
   @override
   Widget build(BuildContext context) {
@@ -190,7 +202,7 @@ class HomeContentView extends StatelessWidget {
                           ),
                         ),
 
-                        // Floating "Find Doctor" Action Button
+                        // Floating "Find Doctor" Action Button -> Opens ConsultationScreen
                         Positioned(
                           bottom: -22,
                           child: SizedBox(
@@ -200,7 +212,7 @@ class HomeContentView extends StatelessWidget {
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                    builder: (_) => const BookingFlowScreen(),
+                                    builder: (_) => const ConsultationScreen(),
                                   ),
                                 );
                               },
@@ -248,6 +260,77 @@ class HomeContentView extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // Waiting Room Banner Card
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF80E8FF), Color(0xFF26C6DA)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.timer_outlined,
+                        color: Colors.white,
+                        size: 36,
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: const [
+                            Text(
+                              'Your appointment is ready',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            SizedBox(height: 2),
+                            Text(
+                              'Enter Waiting Room',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.white,
+                          foregroundColor: const Color(0xFF00ACC1),
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const WaitingRoomScreen(),
+                            ),
+                          );
+                        },
+                        child: const Text(
+                          'Join',
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 28),
+
                 // EHealthcare Services Section
                 const Text(
                   'EHealthcare Services',
@@ -321,7 +404,7 @@ class HomeContentView extends StatelessWidget {
                       ),
                     ),
                     TextButton(
-                      onPressed: () {},
+                      onPressed: onSeeAllAppointments,
                       child: const Text(
                         'See All',
                         style: TextStyle(
@@ -335,105 +418,189 @@ class HomeContentView extends StatelessWidget {
                 ),
                 const SizedBox(height: 12),
 
-                // Appointment Detail Card
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(20),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.02),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Appointment date',
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  color: AppColors.textMuted,
+                // Appointment Summary Card
+                GestureDetector(
+                  onTap: () {
+                    showModalBottomSheet(
+                      context: context,
+                      isScrollControlled: true,
+                      backgroundColor: Colors.transparent,
+                      builder: (_) => Container(
+                        padding: const EdgeInsets.all(24),
+                        decoration: const BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.vertical(
+                            top: Radius.circular(24),
+                          ),
+                        ),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                const Text(
+                                  'Appointment Summary',
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                IconButton(
+                                  icon: const Icon(Icons.close),
+                                  onPressed: () => Navigator.pop(context),
+                                ),
+                              ],
+                            ),
+                            const Divider(),
+                            const SizedBox(height: 12),
+                            const Text(
+                              'Doctor: dr. Nirmala Azalea (Orthopedic)',
+                              style: TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            const Text(
+                              'Date & Time: Wed Jun 20 • 8:00 - 8:30 AM',
+                              style: TextStyle(
+                                color: Colors.grey,
+                                fontSize: 14,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            const Text(
+                              'Status: Confirmed & Paid',
+                              style: TextStyle(
+                                color: Colors.green,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14,
+                              ),
+                            ),
+                            const SizedBox(height: 24),
+                            SizedBox(
+                              width: double.infinity,
+                              height: 48,
+                              child: ElevatedButton(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xFF4FC3F7),
+                                ),
+                                onPressed: () => Navigator.pop(context),
+                                child: const Text(
+                                  'Close',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
                               ),
-                              SizedBox(height: 4),
-                              Row(
-                                children: [
-                                  Icon(
-                                    Icons.access_time_rounded,
-                                    size: 15,
-                                    color: AppColors.textDark,
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.02),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Appointment date',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: AppColors.textMuted,
                                   ),
-                                  SizedBox(width: 6),
-                                  Text(
-                                    'Wed Jun 20  •  8:00 - 8:30 AM',
-                                    style: TextStyle(
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.w600,
+                                ),
+                                SizedBox(height: 4),
+                                Row(
+                                  children: [
+                                    Icon(
+                                      Icons.access_time_rounded,
+                                      size: 15,
                                       color: AppColors.textDark,
                                     ),
+                                    SizedBox(width: 6),
+                                    Text(
+                                      'Wed Jun 20  •  8:00 - 8:30 AM',
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w600,
+                                        color: AppColors.textDark,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                            IconButton(
+                              icon: const Icon(
+                                Icons.more_vert,
+                                color: AppColors.textMuted,
+                                size: 20,
+                              ),
+                              onPressed: () {},
+                            ),
+                          ],
+                        ),
+                        const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 12.0),
+                          child: Divider(height: 1, color: Color(0xFFF1F5F9)),
+                        ),
+                        Row(
+                          children: [
+                            const CircleAvatar(
+                              radius: 24,
+                              backgroundImage: NetworkImage(
+                                'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?q=80&w=200&auto=format&fit=crop',
+                              ),
+                            ),
+                            const SizedBox(width: 14),
+                            const Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'dr. Nirmala Azalea',
+                                  style: TextStyle(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.bold,
+                                    color: AppColors.textDark,
                                   ),
-                                ],
-                              ),
-                            ],
-                          ),
-                          IconButton(
-                            icon: const Icon(
-                              Icons.more_vert,
-                              color: AppColors.textMuted,
-                              size: 20,
-                            ),
-                            onPressed: () {},
-                          ),
-                        ],
-                      ),
-                      const Padding(
-                        padding: EdgeInsets.symmetric(vertical: 12.0),
-                        child: Divider(height: 1, color: Color(0xFFF1F5F9)),
-                      ),
-                      Row(
-                        children: [
-                          const CircleAvatar(
-                            radius: 24,
-                            backgroundImage: NetworkImage(
-                              'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?q=80&w=200&auto=format&fit=crop',
-                            ),
-                          ),
-                          const SizedBox(width: 14),
-                          const Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'dr. Nirmala Azalea',
-                                style: TextStyle(
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.bold,
-                                  color: AppColors.textDark,
                                 ),
-                              ),
-                              SizedBox(height: 2),
-                              Text(
-                                'Orthopedic',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: AppColors.textMuted,
+                                SizedBox(height: 2),
+                                Text(
+                                  'Orthopedic',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: AppColors.textMuted,
+                                  ),
                                 ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ],
+                              ],
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
                 ),
                 const SizedBox(height: 20),

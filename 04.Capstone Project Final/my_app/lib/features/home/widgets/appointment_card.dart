@@ -24,10 +24,12 @@ class AppointmentCard extends StatelessWidget {
           context,
           MaterialPageRoute(
             builder: (_) => BookingDetailScreen(
-              doctor: doctor,
-              date: date,
-              time: time,
-              reason: '',
+              doctorId: doctor.id ?? '',
+              doctorName: doctor.name ?? 'Doctor',
+              specialty: doctor.specialization,
+              selectedDateTime:
+                  DateTime.now(), // Or combine date and time if available
+              appointmentType: 'In Person',
             ),
           ),
         );

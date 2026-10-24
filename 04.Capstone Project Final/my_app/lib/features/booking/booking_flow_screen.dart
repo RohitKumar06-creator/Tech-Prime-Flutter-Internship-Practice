@@ -28,9 +28,7 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
         final vm = BookingViewModel();
         if (widget.doctor != null) {
           vm.selectDoctor(widget.doctor!);
-          if (vm.currentStep == 0) {
-            vm.nextStep();
-          }
+          vm.currentStep = 1; // Direct jump to Schedule Step (Step 1)
         }
         return vm;
       },
@@ -47,7 +45,16 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
                         color: AppColors.textDark,
                         size: 20,
                       ),
-                      onPressed: () => viewModel.prevStep(context),
+                      onPressed: () {
+                        // If doctor was pre-selected from Find Doctor Screen,
+                        // going back from Step 1 exits back to Find Doctor Screen
+                        if (widget.doctor != null &&
+                            viewModel.currentStep == 1) {
+                          Navigator.pop(context);
+                        } else {
+                          viewModel.prevStep(context);
+                        }
+                      },
                     ),
                     elevation: 0,
                     backgroundColor: Colors.transparent,
@@ -95,11 +102,14 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
                             onReasonSelected: viewModel.selectReason,
                           ),
                           PaymentMethodStep(
-                            onCardSelected: (card) =>
-                                viewModel.selectPaymentCard(card),
+                            onCardSelected: (card) {
+                              if (card != null) {
+                                viewModel.selectPaymentCard(card);
+                              }
+                            },
                           ),
                           BookingSummaryStep(viewModel: viewModel),
-                          const BookingSuccessStep(),
+                          BookingSuccessStep(viewModel: viewModel),
                         ],
                       ),
                     ),
@@ -113,6 +123,19 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
                           onPressed: viewModel.isProcessingPayment
                               ? null
                               : () async {
+                                  if (viewModel.currentStep == 3 &&
+                                      viewModel.selectedCard == null) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text(
+                                          'Please select or add a payment card to continue',
+                                        ),
+                                        backgroundColor: Colors.red,
+                                      ),
+                                    );
+                                    return;
+                                  }
+
                                   if (viewModel.currentStep == 4) {
                                     final success = await viewModel
                                         .confirmBookingAndSave();

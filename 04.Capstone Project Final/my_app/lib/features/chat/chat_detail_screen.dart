@@ -5,12 +5,14 @@ import '../../core/constants/app_colors.dart';
 import 'viewmodels/chat_viewmodel.dart';
 
 class ChatDetailScreen extends StatefulWidget {
+  final String chatId;
   final String name;
   final String specialization;
   final String avatarUrl;
 
   const ChatDetailScreen({
     super.key,
+    required this.chatId,
     required this.name,
     required this.specialization,
     required this.avatarUrl,
@@ -31,7 +33,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
 
   void _handleSend(ChatViewModel viewModel) {
     if (_messageController.text.trim().isNotEmpty) {
-      viewModel.sendMessage(_messageController.text);
+      viewModel.sendMessage(widget.chatId, _messageController.text);
       _messageController.clear();
     }
   }
@@ -39,7 +41,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
   @override
   Widget build(BuildContext context) {
     final viewModel = Provider.of<ChatViewModel>(context);
-    final messages = viewModel.messages;
+    final messages = viewModel.getMessagesForChat(widget.chatId);
 
     return Scaffold(
       backgroundColor: const Color(0xFFF9FAFB),
@@ -56,26 +58,9 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
         ),
         title: Row(
           children: [
-            Stack(
-              children: [
-                CircleAvatar(
-                  radius: 20,
-                  backgroundImage: NetworkImage(widget.avatarUrl),
-                ),
-                Positioned(
-                  right: 0,
-                  bottom: 0,
-                  child: Container(
-                    width: 10,
-                    height: 10,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF00C853),
-                      shape: BoxShape.circle,
-                      border: Border.all(color: Colors.white, width: 1.5),
-                    ),
-                  ),
-                ),
-              ],
+            CircleAvatar(
+              radius: 18,
+              backgroundImage: NetworkImage(widget.avatarUrl),
             ),
             const SizedBox(width: 12),
             Column(
@@ -105,120 +90,71 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
         child: Column(
           children: [
             Expanded(
-              child: ListView.builder(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16.0,
-                  vertical: 16.0,
-                ),
-                itemCount: messages.length,
-                itemBuilder: (context, index) {
-                  final msg = messages[index];
-                  final showTimeHeader =
-                      index == 0 || index == 2 || index == 3 || index == 6;
-
-                  return Column(
-                    crossAxisAlignment: msg.isMe
-                        ? CrossAxisAlignment.end
-                        : CrossAxisAlignment.start,
-                    children: [
-                      if (showTimeHeader)
-                        Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 8.0),
-                          child: Align(
-                            alignment: msg.isMe
-                                ? Alignment.centerRight
-                                : Alignment.centerLeft,
+              child: messages.isEmpty
+                  ? const Center(
+                      child: Text(
+                        'No messages yet. Start the consultation.',
+                        style: TextStyle(color: Colors.grey),
+                      ),
+                    )
+                  : ListView.builder(
+                      padding: const EdgeInsets.all(16.0),
+                      itemCount: messages.length,
+                      itemBuilder: (context, index) {
+                        final msg = messages[index];
+                        return Align(
+                          alignment: msg.isMe
+                              ? Alignment.centerRight
+                              : Alignment.centerLeft,
+                          child: Container(
+                            margin: const EdgeInsets.only(bottom: 10),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 12,
+                            ),
+                            constraints: BoxConstraints(
+                              maxWidth:
+                                  MediaQuery.of(context).size.width * 0.75,
+                            ),
+                            decoration: BoxDecoration(
+                              color: msg.isMe
+                                  ? const Color(0xFF4FC3F7)
+                                  : Colors.white,
+                              borderRadius: BorderRadius.circular(16),
+                            ),
                             child: Text(
-                              msg.time,
-                              style: const TextStyle(
-                                fontSize: 11,
-                                color: AppColors.textMuted,
+                              msg.text,
+                              style: TextStyle(
+                                color: msg.isMe
+                                    ? Colors.white
+                                    : AppColors.textDark,
+                                fontSize: 14,
                               ),
                             ),
                           ),
-                        ),
-                      Container(
-                        margin: const EdgeInsets.only(bottom: 8.0),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 18.0,
-                          vertical: 12.0,
-                        ),
-                        constraints: BoxConstraints(
-                          maxWidth: MediaQuery.of(context).size.width * 0.75,
-                        ),
-                        decoration: BoxDecoration(
-                          color: msg.isMe
-                              ? const Color(0xFF4FC3F7)
-                              : Colors.white,
-                          borderRadius: BorderRadius.only(
-                            topLeft: const Radius.circular(20),
-                            topRight: const Radius.circular(20),
-                            bottomLeft: Radius.circular(msg.isMe ? 20 : 4),
-                            bottomRight: Radius.circular(msg.isMe ? 4 : 20),
-                          ),
-                          boxShadow: [
-                            if (!msg.isMe)
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.02),
-                                blurRadius: 10,
-                                offset: const Offset(0, 4),
-                              ),
-                          ],
-                        ),
-                        child: Text(
-                          msg.text,
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: msg.isMe ? Colors.white : AppColors.textDark,
-                            height: 1.3,
-                          ),
-                        ),
-                      ),
-                    ],
-                  );
-                },
-              ),
+                        );
+                      },
+                    ),
             ),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               color: Colors.white,
               child: Row(
                 children: [
-                  IconButton(
-                    icon: const Icon(
-                      Icons.attach_file,
-                      color: AppColors.textMuted,
-                    ),
-                    onPressed: () {},
-                  ),
-                  IconButton(
-                    icon: const Icon(
-                      Icons.sentiment_satisfied_alt_outlined,
-                      color: AppColors.textMuted,
-                    ),
-                    onPressed: () {},
-                  ),
-                  const SizedBox(width: 4),
                   Expanded(
                     child: TextField(
                       controller: _messageController,
                       onSubmitted: (_) => _handleSend(viewModel),
                       decoration: const InputDecoration(
-                        hintText: 'Type message...',
-                        hintStyle: TextStyle(
-                          color: AppColors.textMuted,
-                          fontSize: 14,
-                        ),
+                        hintText: 'Type a message...',
                         border: InputBorder.none,
-                        enabledBorder: InputBorder.none,
-                        focusedBorder: InputBorder.none,
                       ),
                     ),
                   ),
                   IconButton(
                     icon: const Icon(
                       Icons.send_rounded,
-                      color: AppColors.primaryBlue,
+                      color: Color(0xFF4FC3F7),
                     ),
                     onPressed: () => _handleSend(viewModel),
                   ),

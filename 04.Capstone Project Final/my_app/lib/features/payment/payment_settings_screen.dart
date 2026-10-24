@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../core/constants/app_colors.dart';
 import '../../models/card_model.dart';
 import 'viewmodels/payment_viewmodel.dart';
 import 'widgets/add_card_sheet.dart';
@@ -10,17 +9,22 @@ import 'widgets/card_options_sheet.dart';
 class PaymentSettingsScreen extends StatelessWidget {
   const PaymentSettingsScreen({super.key});
 
-  void _openAddCardSheet(BuildContext context, PaymentViewModel viewModel) {
-    showModalBottomSheet(
+  static const Color _appPrimaryColor = Color(0xFF4FC3F7);
+
+  void _openAddCardSheet(
+    BuildContext context,
+    PaymentViewModel viewModel,
+  ) async {
+    final newCard = await showModalBottomSheet<PaymentCardModel>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => AddCardSheet(
-        onCardAdded: (PaymentCardModel newCard) {
-          viewModel.addCard(newCard);
-        },
-      ),
+      builder: (_) => const AddCardBottomSheet(),
     );
+
+    if (newCard != null) {
+      viewModel.addCard(newCard);
+    }
   }
 
   void _openCardOptions(
@@ -53,7 +57,7 @@ class PaymentSettingsScreen extends StatelessWidget {
               leading: IconButton(
                 icon: const Icon(
                   Icons.arrow_back_ios_new,
-                  color: AppColors.textDark,
+                  color: Colors.black87,
                   size: 20,
                 ),
                 onPressed: () => Navigator.pop(context),
@@ -64,7 +68,7 @@ class PaymentSettingsScreen extends StatelessWidget {
               title: const Text(
                 'Payment',
                 style: TextStyle(
-                  color: AppColors.textDark,
+                  color: Colors.black87,
                   fontWeight: FontWeight.bold,
                   fontSize: 20,
                 ),
@@ -75,7 +79,7 @@ class PaymentSettingsScreen extends StatelessWidget {
                   child: const Text(
                     'Add Card',
                     style: TextStyle(
-                      color: AppColors.primaryBlue,
+                      color: _appPrimaryColor,
                       fontWeight: FontWeight.bold,
                       fontSize: 15,
                     ),
@@ -93,17 +97,19 @@ class PaymentSettingsScreen extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'Active Card',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.textDark,
+                    if (activeCard != null) ...[
+                      const Text(
+                        'Active Card',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black87,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 12),
-                    _buildCardItem(context, activeCard, viewModel),
-                    const SizedBox(height: 28),
+                      const SizedBox(height: 12),
+                      _buildCardItem(context, activeCard, viewModel),
+                      const SizedBox(height: 28),
+                    ],
 
                     if (secondaryCards.isNotEmpty) ...[
                       const Text(
@@ -111,7 +117,7 @@ class PaymentSettingsScreen extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
-                          color: AppColors.textDark,
+                          color: Colors.black87,
                         ),
                       ),
                       const SizedBox(height: 12),
@@ -180,7 +186,7 @@ class PaymentSettingsScreen extends StatelessWidget {
           ),
           const Spacer(),
           Text(
-            card.cardNumber,
+            card.maskedNumber,
             style: const TextStyle(
               color: Colors.white,
               fontSize: 22,

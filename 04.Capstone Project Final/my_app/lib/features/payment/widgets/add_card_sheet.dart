@@ -1,75 +1,115 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
-import '../../../core/constants/app_colors.dart';
 import '../../../models/card_model.dart';
-import '../../booking/booking_flow_screen.dart';
 
-class AddCardSheet extends StatefulWidget {
-  final Function(PaymentCardModel)? onCardAdded;
-  final double? amount;
-
-  const AddCardSheet({super.key, this.onCardAdded, this.amount});
-
+// Formatter to auto-format MM/YY automatically
+class DateInputFormatter extends TextInputFormatter {
   @override
-  State<AddCardSheet> createState() => _AddCardSheetState();
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    var text = newValue.text;
+
+    if (newValue.selection.baseOffset == 0) {
+      return newValue;
+    }
+
+    var buffer = StringBuffer();
+    for (int i = 0; i < text.length; i++) {
+      buffer.write(text[i]);
+      var nonOnlyDigits = i + 1;
+      if (nonOnlyDigits == 2 && !text.contains('/')) {
+        buffer.write('/');
+      }
+    }
+
+    var string = buffer.toString();
+    return newValue.copyWith(
+      text: string,
+      selection: TextSelection.collapsed(offset: string.length),
+    );
+  }
 }
 
-class _AddCardSheetState extends State<AddCardSheet> {
+class AddCardBottomSheet extends StatefulWidget {
+  const AddCardBottomSheet({super.key});
+
+  @override
+  State<AddCardBottomSheet> createState() => _AddCardBottomSheetState();
+}
+
+class _AddCardBottomSheetState extends State<AddCardBottomSheet> {
   final _formKey = GlobalKey<FormState>();
-  final _cardNumberController = TextEditingController();
-  final _cardHolderController = TextEditingController();
+  final _holderController = TextEditingController();
+  final _numberController = TextEditingController();
   final _expiryController = TextEditingController();
   final _cvvController = TextEditingController();
 
-  bool _isLoading = false;
+  bool _isDefault = false;
+  bool _isSaving = false;
 
-  @override
-  void dispose() {
-    _cardNumberController.dispose();
-    _cardHolderController.dispose();
-    _expiryController.dispose();
-    _cvvController.dispose();
-    super.dispose();
-  }
+  static const Color _appPrimaryColor = Color(0xFF4FC3F7);
 
-  Future<void> _processPaymentAndSaveCard() async {
+  Future<void> _saveCard() async {
     if (!_formKey.currentState!.validate()) return;
 
-    setState(() => _isLoading = true);
-
-    await Future.delayed(const Duration(seconds: 2));
-
-    final rawCardNum = _cardNumberController.text.replaceAll(' ', '').trim();
-    final last4 = rawCardNum.length >= 4
-        ? rawCardNum.substring(rawCardNum.length - 4)
-        : '0000';
-
-    final newCard = PaymentCardModel(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
-      cardHolder: _cardHolderController.text.trim(),
-      cardNumber: rawCardNum,
-      last4: last4,
-      expiry: _expiryController.text.trim(),
-      cvv: _cvvController.text.trim(),
-      brand: 'Visa',
-      gradientColors: [const Color(0xFF1A1A1A), const Color(0xFF333333)],
-      isDefault: false,
-    );
-
-    if (widget.onCardAdded != null) {
-      widget.onCardAdded!(newCard);
+    setState(() => _isSaving = true);
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) {
+      setState(() => _isSaving = false);
+      return;
     }
 
-    if (mounted) {
-      setState(() => _isLoading = false);
-      Navigator.pop(context); // Close bottom sheet
+    try {
+      final cardNum = _numberController.text.replaceAll(' ', '');
+      final last4Digits = cardNum.length >= 4
+          ? cardNum.substring(cardNum.length - 4)
+          : cardNum;
 
-      Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(builder: (_) => const BookingFlowScreen()),
-        (route) => route.isFirst,
+      final brandName = _detectBrand(cardNum);
+      final ref = FirebaseFirestore.instance
+          .collection('users')
+          .doc(uid)
+          .collection('cards')
+          .doc();
+
+      final newCard = PaymentCardModel(
+        id: ref.id,
+        cardHolder: _holderController.text.trim().isEmpty
+            ? 'Zhafira Azalea'
+            : _holderController.text.trim(),
+        cardNumber: cardNum,
+        last4: last4Digits,
+        expiry: _expiryController.text.trim(),
+        cvv: _cvvController.text.trim(),
+        brand: brandName,
+        isDefault: _isDefault,
+        gradientColors: brandName.toLowerCase() == 'visa'
+            ? [const Color(0xFF11998E), const Color(0xFF38EF7D)]
+            : [const Color(0xFF8E2DE2), const Color(0xFF4A00E0)],
       );
+
+      await ref.set(newCard.toMap());
+
+      if (mounted) {
+        Navigator.pop(context, newCard);
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('Failed to save card: $e')));
+    } finally {
+      if (mounted) setState(() => _isSaving = false);
     }
+  }
+
+  String _detectBrand(String number) {
+    if (number.startsWith('4')) return 'Visa';
+    if (number.startsWith('3')) return 'Amex';
+    return 'Mastercard';
   }
 
   @override
@@ -79,116 +119,147 @@ class _AddCardSheetState extends State<AddCardSheet> {
         bottom: MediaQuery.of(context).viewInsets.bottom,
       ),
       child: Container(
-        padding: const EdgeInsets.all(24),
         decoration: const BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
         ),
-        child: SingleChildScrollView(
-          child: Form(
-            key: _formKey,
+        padding: const EdgeInsets.all(24),
+        child: Form(
+          key: _formKey,
+          child: SingleChildScrollView(
+            // Fixes 61px bottom overflow issue
             child: Column(
               mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
+                    const SizedBox(width: 48),
                     const Text(
-                      'Add Credit/Debit Card',
+                      'Add Card',
                       style: TextStyle(
-                        fontSize: 18,
+                        fontSize: 20,
                         fontWeight: FontWeight.bold,
-                        color: AppColors.textDark,
                       ),
                     ),
-                    IconButton(
-                      icon: const Icon(Icons.close),
+                    TextButton(
                       onPressed: () => Navigator.pop(context),
+                      child: const Text(
+                        'Cancel',
+                        style: TextStyle(color: Colors.grey),
+                      ),
                     ),
                   ],
                 ),
+                const SizedBox(height: 8),
+                const Text(
+                  'Start typing to add your credit card details. Everything will update according to your data.',
+                  style: TextStyle(color: Colors.grey, fontSize: 13),
+                ),
                 const SizedBox(height: 16),
-
                 TextFormField(
-                  controller: _cardNumberController,
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(
-                    labelText: 'Card Number',
-                    prefixIcon: Icon(Icons.credit_card_rounded),
-                    border: OutlineInputBorder(),
-                  ),
-                  validator: (val) {
-                    if (val == null || val.replaceAll(' ', '').length < 16) {
-                      return 'Enter a valid 16-digit card number';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 12),
-
-                TextFormField(
-                  controller: _cardHolderController,
-                  decoration: const InputDecoration(
+                  controller: _holderController,
+                  decoration: InputDecoration(
                     labelText: 'Cardholder Name',
-                    prefixIcon: Icon(Icons.person_outline_rounded),
-                    border: OutlineInputBorder(),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
                   ),
-                  validator: (val) =>
-                      val == null || val.isEmpty ? 'Required' : null,
                 ),
                 const SizedBox(height: 12),
-
+                TextFormField(
+                  controller: _numberController,
+                  keyboardType: TextInputType.number,
+                  decoration: InputDecoration(
+                    labelText: 'Card Number',
+                    prefixIcon: const Icon(Icons.credit_card),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                  ),
+                  validator: (val) => val == null || val.length < 12
+                      ? 'Enter valid number'
+                      : null,
+                ),
+                const SizedBox(height: 12),
                 Row(
                   children: [
                     Expanded(
                       child: TextFormField(
                         controller: _expiryController,
-                        keyboardType: TextInputType.datetime,
-                        decoration: const InputDecoration(
-                          labelText: 'MM/YY',
-                          border: OutlineInputBorder(),
+                        keyboardType: TextInputType.number,
+                        inputFormatters: [
+                          FilteringTextInputFormatter.digitsOnly,
+                          LengthLimitingTextInputFormatter(4),
+                          DateInputFormatter(), // Converts 1122 to 11/22
+                        ],
+                        decoration: InputDecoration(
+                          labelText: 'Expiry (MM/YY)',
+                          hintText: 'MM/YY',
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
                         ),
-                        validator: (val) =>
-                            val == null || val.isEmpty ? 'Required' : null,
+                        validator: (val) {
+                          if (val == null ||
+                              val.isEmpty ||
+                              !val.contains('/')) {
+                            return 'Required';
+                          }
+                          final parts = val.split('/');
+                          if (parts.length != 2) return 'Invalid';
+                          final month = int.tryParse(parts[0]) ?? 0;
+                          if (month < 1 || month > 12) return 'Invalid MM';
+                          return null;
+                        },
                       ),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
                       child: TextFormField(
                         controller: _cvvController,
-                        keyboardType: TextInputType.number,
                         obscureText: true,
-                        decoration: const InputDecoration(
+                        keyboardType: TextInputType.number,
+                        inputFormatters: [
+                          FilteringTextInputFormatter.digitsOnly,
+                          LengthLimitingTextInputFormatter(4),
+                        ],
+                        decoration: InputDecoration(
                           labelText: 'CVV',
-                          border: OutlineInputBorder(),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
                         ),
                         validator: (val) =>
-                            val == null || val.length < 3 ? 'Invalid' : null,
+                            val == null || val.length < 3 ? 'Required' : null,
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 24),
-
+                const SizedBox(height: 12),
+                SwitchListTile(
+                  title: const Text('Set as default'),
+                  value: _isDefault,
+                  activeColor: _appPrimaryColor,
+                  onChanged: (val) => setState(() => _isDefault = val),
+                ),
+                const SizedBox(height: 16),
                 SizedBox(
                   width: double.infinity,
-                  height: 50,
+                  height: 52,
                   child: ElevatedButton(
-                    onPressed: _isLoading ? null : _processPaymentAndSaveCard,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF4FC3F7),
+                      backgroundColor: _appPrimaryColor,
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(16),
                       ),
                     ),
-                    child: _isLoading
+                    onPressed: _isSaving ? null : _saveCard,
+                    child: _isSaving
                         ? const CircularProgressIndicator(color: Colors.white)
-                        : Text(
-                            widget.amount != null
-                                ? 'Pay \$${widget.amount!.toStringAsFixed(2)} & Complete'
-                                : 'Save Card & Proceed',
-                            style: const TextStyle(
+                        : const Text(
+                            'Save Card',
+                            style: TextStyle(
                               color: Colors.white,
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
@@ -196,6 +267,7 @@ class _AddCardSheetState extends State<AddCardSheet> {
                           ),
                   ),
                 ),
+                const SizedBox(height: 16),
               ],
             ),
           ),

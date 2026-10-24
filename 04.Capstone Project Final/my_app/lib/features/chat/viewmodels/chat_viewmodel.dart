@@ -2,18 +2,51 @@ import 'package:flutter/material.dart';
 
 import '../../../models/chat_conversation_model.dart';
 import '../../../models/chat_message_model.dart';
+import '../../../models/doctor_model.dart';
+
+enum ChatFilter { all, unread, doctors, admins }
 
 class ChatViewModel extends ChangeNotifier {
   String _searchQuery = '';
+  ChatFilter _activeFilter = ChatFilter.all;
+  final Set<String> _mutedChatIds = {};
 
-  // Active conversations list
+  // Individual message maps per chat ID to isolate conversation history
+  final Map<String, List<ChatMessageModel>> _chatMessagesMap = {
+    'conv_1': [
+      ChatMessageModel(
+        id: 'm1',
+        text: 'Hello doc!',
+        time: '11:20 AM',
+        isMe: true,
+      ),
+      ChatMessageModel(
+        id: 'm2',
+        text: 'Your test results are stable.',
+        time: '11:21 AM',
+        isMe: false,
+      ),
+    ],
+    'conv_2': [
+      ChatMessageModel(
+        id: 'm3',
+        text: 'My progress is getting better. Thank you.',
+        time: '10:45 AM',
+        isMe: true,
+      ),
+    ],
+  };
+
+  ChatFilter get activeFilter => _activeFilter;
+  bool isMuted(String chatId) => _mutedChatIds.contains(chatId);
+
   final List<ChatConversationModel> _conversations = [
     ChatConversationModel(
       id: 'conv_1',
       name: 'dr. Nirmala Azalea',
       role: 'Doctor',
       lastMessage: 'Hello doc!',
-      time: '11:20',
+      time: '11:20 AM',
       unreadCount: 2,
       isOnline: true,
       avatarUrl: 'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?q=80&w=200&auto=format&fit=crop',
@@ -22,8 +55,8 @@ class ChatViewModel extends ChangeNotifier {
       id: 'conv_2',
       name: 'dr. Rakabuming Suhu',
       role: 'Doctor',
-      lastMessage: 'My progress is getting better. Thank yo...',
-      time: '11:20',
+      lastMessage: 'My progress is getting better. Thank you.',
+      time: '10:45 AM',
       unreadCount: 0,
       isOnline: false,
       avatarUrl: 'https://images.unsplash.com/photo-1622253692010-333f2da6031d?q=80&w=200&auto=format&fit=crop',
@@ -32,97 +65,218 @@ class ChatViewModel extends ChangeNotifier {
       id: 'conv_3',
       name: 'Beby Jovanca',
       role: 'Admin',
-      lastMessage: 'When I can get notification about my pa...',
-      time: '11:20',
-      unreadCount: 0,
+      lastMessage: 'When I can get notification about my patient status?',
+      time: 'Yesterday',
+      unreadCount: 1,
       isOnline: false,
       avatarUrl: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=200&auto=format&fit=crop',
     ),
-    ChatConversationModel(
-      id: 'conv_4',
-      name: 'dr. Zhafira Ulya',
-      role: 'Doctor',
-      lastMessage: 'Just take a rest and don\'t get too tired.',
-      time: '11:20',
-      unreadCount: 0,
-      isOnline: false,
-      avatarUrl: 'https://images.unsplash.com/photo-1594824813566-7885a3977336?q=80&w=200&auto=format&fit=crop',
+  ];
+
+  // Full list of available doctors for the "Add New Chat" list
+  final List<DoctorModel> _allDoctors = [
+    DoctorModel(
+      id: '1',
+      name: 'dr. Nirmala Azalea',
+      specialization: 'Orthopedic',
+      experience: '50+',
+      imageUrl: 'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?q=80&w=400',
+    ),
+    DoctorModel(
+      id: '2',
+      name: 'dr. Agus Subandono',
+      specialization: 'Pediatric',
+      experience: '30+',
+      imageUrl: 'https://images.unsplash.com/photo-1622253692010-333f2da6031d?q=80&w=400',
+    ),
+    DoctorModel(
+      id: '3',
+      name: 'dr. Bambang Sucat Pelat',
+      specialization: 'Neurosurgeon',
+      experience: '20+',
+      imageUrl: 'https://images.unsplash.com/photo-1537368910025-700350fe46c7?q=80&w=400',
+    ),
+    DoctorModel(
+      id: '4',
+      name: 'dr. Desi Sulawesi',
+      specialization: 'Obstetrician',
+      experience: '50+',
+      imageUrl: 'https://images.unsplash.com/photo-1594824813566-78a933773322?q=80&w=400',
     ),
   ];
 
-  // Active messages list for detail view
-  final List<ChatMessageModel> _messages = [
-    ChatMessageModel(id: 'm1', text: 'Halo, Doc', time: '08:50 AM', isMe: true),
-    ChatMessageModel(
-      id: 'm2',
-      text: 'why does my back hurt so much?',
-      time: '08:50 AM',
-      isMe: true,
-    ),
-    ChatMessageModel(
-      id: 'm3',
-      text: 'You sit too long. Try drinking lots of water',
-      time: '08:01 Am',
-      isMe: false,
-    ),
-    ChatMessageModel(
-      id: 'm4',
-      text: 'Oh like that.',
-      time: '08:50 AM',
-      isMe: true,
-    ),
-    ChatMessageModel(
-      id: 'm5',
-      text: 'ok doc. I will drink lots of water and exercise.',
-      time: '08:50 AM',
-      isMe: true,
-    ),
-    ChatMessageModel(
-      id: 'm6',
-      text: 'Thanks a lot doc 😍',
-      time: '08:50 AM',
-      isMe: true,
-    ),
-    ChatMessageModel(
-      id: 'm7',
-      text: 'Don\'t mention it beby 👍',
-      time: '08:01 Am',
-      isMe: false,
-    ),
-  ];
+  List<DoctorModel> get availableDoctors => _allDoctors;
 
-  // Getters
-  List<ChatMessageModel> get messages => _messages;
+  int get totalUnreadCount =>
+      _conversations.fold(0, (sum, item) => sum + item.unreadCount);
 
   List<ChatConversationModel> get filteredConversations {
-    if (_searchQuery.isEmpty) return _conversations;
-    return _conversations
-        .where(
-          (c) =>
-              c.name.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-              c.lastMessage.toLowerCase().contains(_searchQuery.toLowerCase()),
-        )
-        .toList();
+    return _conversations.where((c) {
+      final matchesSearch =
+          c.name.toLowerCase().contains(_searchQuery.toLowerCase()) ||
+          c.lastMessage.toLowerCase().contains(_searchQuery.toLowerCase());
+      if (!matchesSearch) return false;
+
+      switch (_activeFilter) {
+        case ChatFilter.unread:
+          return c.unreadCount > 0;
+        case ChatFilter.doctors:
+          return c.role.toLowerCase() == 'doctor';
+        case ChatFilter.admins:
+          return c.role.toLowerCase() == 'admin';
+        case ChatFilter.all:
+        default:
+          return true;
+      }
+    }).toList();
   }
 
-  // Actions
+  List<ChatMessageModel> getMessagesForChat(String chatId) {
+    return _chatMessagesMap[chatId] ?? [];
+  }
+
   void setSearchQuery(String query) {
     _searchQuery = query;
     notifyListeners();
   }
 
-  void sendMessage(String text) {
+  void setFilter(ChatFilter filter) {
+    _activeFilter = filter;
+    notifyListeners();
+  }
+
+  void markAsRead(String conversationId) {
+    final index = _conversations.indexWhere((c) => c.id == conversationId);
+    if (index != -1 && _conversations[index].unreadCount > 0) {
+      final c = _conversations[index];
+      _conversations[index] = ChatConversationModel(
+        id: c.id,
+        name: c.name,
+        role: c.role,
+        lastMessage: c.lastMessage,
+        time: c.time,
+        unreadCount: 0,
+        isOnline: c.isOnline,
+        avatarUrl: c.avatarUrl,
+      );
+      notifyListeners();
+    }
+  }
+
+  void markAllAsRead() {
+    for (int i = 0; i < _conversations.length; i++) {
+      if (_conversations[i].unreadCount > 0) {
+        final c = _conversations[i];
+        _conversations[i] = ChatConversationModel(
+          id: c.id,
+          name: c.name,
+          role: c.role,
+          lastMessage: c.lastMessage,
+          time: c.time,
+          unreadCount: 0,
+          isOnline: c.isOnline,
+          avatarUrl: c.avatarUrl,
+        );
+      }
+    }
+    notifyListeners();
+  }
+
+  void toggleMuteChat(String chatId) {
+    if (_mutedChatIds.contains(chatId)) {
+      _mutedChatIds.remove(chatId);
+    } else {
+      _mutedChatIds.add(chatId);
+    }
+    notifyListeners();
+  }
+
+  void deleteChat(String chatId) {
+    _conversations.removeWhere((c) => c.id == chatId);
+    _chatMessagesMap.remove(chatId);
+    _mutedChatIds.remove(chatId);
+    notifyListeners();
+  }
+
+  void clearChatHistory(String chatId) {
+    _chatMessagesMap[chatId] = [];
+    final index = _conversations.indexWhere((c) => c.id == chatId);
+    if (index != -1) {
+      final c = _conversations[index];
+      _conversations[index] = ChatConversationModel(
+        id: c.id,
+        name: c.name,
+        role: c.role,
+        lastMessage: 'Conversation history cleared.',
+        time: 'Just now',
+        unreadCount: 0,
+        isOnline: c.isOnline,
+        avatarUrl: c.avatarUrl,
+      );
+    }
+    notifyListeners();
+  }
+
+  ChatConversationModel startOrGetConversation(DoctorModel doctor) {
+    final existingIndex = _conversations.indexWhere(
+      (c) => c.name.toLowerCase() == doctor.name.toLowerCase(),
+    );
+
+    if (existingIndex != -1) {
+      markAsRead(_conversations[existingIndex].id);
+      return _conversations[existingIndex];
+    }
+
+    final newChatId = 'conv_${DateTime.now().millisecondsSinceEpoch}';
+    final newConv = ChatConversationModel(
+      id: newChatId,
+      name: doctor.name,
+      role: 'Doctor',
+      lastMessage: 'Consultation channel initialized.',
+      time: 'Just now',
+      unreadCount: 0,
+      isOnline: true,
+      avatarUrl: doctor.imageUrl ?? 'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?q=80&w=200',
+    );
+
+    _chatMessagesMap[newChatId] = [];
+    _conversations.insert(0, newConv);
+    notifyListeners();
+    return newConv;
+  }
+
+  void sendMessage(String chatId, String text) {
     final trimmed = text.trim();
     if (trimmed.isEmpty) return;
 
-    _messages.add(
+    if (!_chatMessagesMap.containsKey(chatId)) {
+      _chatMessagesMap[chatId] = [];
+    }
+
+    _chatMessagesMap[chatId]!.add(
       ChatMessageModel(
         id: DateTime.now().millisecondsSinceEpoch.toString(),
         text: trimmed,
-        time: '08:50 AM',
+        time: 'Just now',
         isMe: true,
       ),
     );
+
+    final index = _conversations.indexWhere((c) => c.id == chatId);
+    if (index != -1) {
+      final c = _conversations[index];
+      _conversations[index] = ChatConversationModel(
+        id: c.id,
+        name: c.name,
+        role: c.role,
+        lastMessage: trimmed,
+        time: 'Just now',
+        unreadCount: c.unreadCount,
+        isOnline: c.isOnline,
+        avatarUrl: c.avatarUrl,
+      );
+    }
+
     notifyListeners();
   }
 }

@@ -1,19 +1,19 @@
 import 'package:flutter/material.dart';
 
 class ProfileViewModel extends ChangeNotifier {
-  // User Profile Data State
+  // User Profile Data State (Default can be blank for new registrations)
   String _ecareId = '1092302';
-  String _username = 'Jenny';
-  String _firstName = 'Jane';
-  String _lastName = 'Doe';
+  String _username = '';
+  String _firstName = '';
+  String _lastName = '';
 
-  String _dateOfBirth = 'Feb 12, 1994';
+  String _dateOfBirth = '';
   String _gender = 'Female';
-  String _phoneNumber = '+6282332877994';
-  String _email = 'jenny123@gmail.com';
-  String _city = 'Bandung';
-  String _province = 'West Java';
-  String _address = 'Jl. Sekar Wangi 20 A, Bancangan';
+  String _phoneNumber = '';
+  String _email = '';
+  String _city = '';
+  String _province = '';
+  String _address = '';
 
   bool _notificationsEnabled = true;
 
@@ -27,7 +27,8 @@ class ProfileViewModel extends ChangeNotifier {
   String get displayName {
     if (_firstName.isEmpty && _username.isNotEmpty) return _username;
     if (_lastName.isNotEmpty) return '$_firstName $_lastName';
-    return _firstName;
+    if (_firstName.isNotEmpty) return _firstName;
+    return 'User'; // Fallback if completely blank
   }
 
   String get dateOfBirth => _dateOfBirth;
@@ -38,6 +39,28 @@ class ProfileViewModel extends ChangeNotifier {
   String get province => _province;
   String get address => _address;
   bool get notificationsEnabled => _notificationsEnabled;
+
+  /// Resets or initializes blank profile data for a brand new user after OTP verification
+  void initializeEmptyUser({String? phoneOrEmail}) {
+    _ecareId =
+        '${DateTime.now().millisecondsSinceEpoch.toString().substring(5)}';
+    _username = '';
+    _firstName = '';
+    _lastName = '';
+    _dateOfBirth = '';
+    _gender = 'Female';
+    _phoneNumber =
+        phoneOrEmail != null && phoneOrEmail.contains(RegExp(r'^[0-9+]'))
+        ? phoneOrEmail
+        : '';
+    _email = phoneOrEmail != null && phoneOrEmail.contains('@')
+        ? phoneOrEmail
+        : '';
+    _city = '';
+    _province = '';
+    _address = '';
+    notifyListeners();
+  }
 
   void loginUser({required String usernameOrEmail}) {
     if (usernameOrEmail.contains('@')) {

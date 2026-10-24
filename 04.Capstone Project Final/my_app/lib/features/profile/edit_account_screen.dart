@@ -2,10 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/constants/app_colors.dart';
+import '../home/home_screen.dart';
 import 'viewmodels/profile_viewmodel.dart';
 
 class EditAccountScreen extends StatefulWidget {
-  const EditAccountScreen({super.key});
+  final bool isFirstTimeSetup;
+
+  const EditAccountScreen({super.key, this.isFirstTimeSetup = false});
 
   @override
   State<EditAccountScreen> createState() => _EditAccountScreenState();
@@ -75,20 +78,22 @@ class _EditAccountScreenState extends State<EditAccountScreen> {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(
-            Icons.arrow_back_ios_new,
-            color: AppColors.textDark,
-            size: 20,
-          ),
-          onPressed: () => Navigator.pop(context),
-        ),
+        leading: widget.isFirstTimeSetup
+            ? null // Hide back button on first time setup so they must complete profile
+            : IconButton(
+                icon: const Icon(
+                  Icons.arrow_back_ios_new,
+                  color: AppColors.textDark,
+                  size: 20,
+                ),
+                onPressed: () => Navigator.pop(context),
+              ),
         elevation: 0,
         backgroundColor: Colors.transparent,
         centerTitle: true,
-        title: const Text(
-          'Edit Account',
-          style: TextStyle(
+        title: Text(
+          widget.isFirstTimeSetup ? 'Complete Your Profile' : 'Edit Account',
+          style: const TextStyle(
             color: AppColors.textDark,
             fontWeight: FontWeight.bold,
             fontSize: 18,
@@ -268,12 +273,27 @@ class _EditAccountScreenState extends State<EditAccountScreen> {
                       province: _provinceController.text,
                       address: _addressController.text,
                     );
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Changes saved successfully'),
-                      ),
-                    );
-                    Navigator.pop(context);
+
+                    if (widget.isFirstTimeSetup) {
+                      // Navigate straight to the main HomeScreen after filling out profile
+                      Navigator.pushAndRemoveUntil(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => ChangeNotifierProvider.value(
+                            value: viewModel,
+                            child: const HomeScreen(),
+                          ),
+                        ),
+                        (route) => false,
+                      );
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Changes saved successfully'),
+                        ),
+                      );
+                      Navigator.pop(context);
+                    }
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primaryBlue,
@@ -282,9 +302,9 @@ class _EditAccountScreenState extends State<EditAccountScreen> {
                       borderRadius: BorderRadius.circular(10),
                     ),
                   ),
-                  child: const Text(
-                    'Save Changes',
-                    style: TextStyle(
+                  child: Text(
+                    widget.isFirstTimeSetup ? 'Get Started' : 'Save Changes',
+                    style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
                       color: Colors.white,

@@ -82,6 +82,11 @@ class BookingViewModel extends ChangeNotifier {
         .toList();
   }
 
+  DateTime get selectedDateTime {
+    final dayNum = int.tryParse(selectedDateNum.toString()) ?? 11;
+    return DateTime(2026, 6, dayNum);
+  }
+
   // Returns a map representing the booking summary for BookingSummaryStep
   Map<String, dynamic> get booking {
     return {
@@ -125,7 +130,7 @@ class BookingViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  void selectPaymentCard(PaymentCardModel card) {
+  void selectPaymentCard(PaymentCardModel? card) {
     selectedCard = card;
     notifyListeners();
   }
@@ -162,7 +167,8 @@ class BookingViewModel extends ChangeNotifier {
         'date': '$selectedDay, $selectedDateNum Jun 2026',
         'time': selectedTime,
         'reason': selectedReason,
-        'paymentCardLast4': selectedCard?.last4 ?? '9812',
+        'paymentCardBrand': selectedCard?.brand ?? 'Mastercard',
+        'paymentCardLast4': selectedCard?.last4 ?? '0329',
         'status': 'Upcoming',
         'createdAt': FieldValue.serverTimestamp(),
       };

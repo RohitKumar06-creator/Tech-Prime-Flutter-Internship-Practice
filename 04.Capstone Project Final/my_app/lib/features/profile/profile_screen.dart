@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:my_app/features/profile/clinic_info_screen.dart';
+import 'package:my_app/features/profile/insurance_detail_screen.dart';
+import 'package:my_app/features/profile/medical_records_screen.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/constants/app_colors.dart';
@@ -77,7 +80,9 @@ class ProfileScreen extends StatelessWidget {
                               Text(
                                 viewModel.firstName.isNotEmpty
                                     ? viewModel.firstName
-                                    : 'Arbab',
+                                    : (viewModel.username.isNotEmpty
+                                          ? viewModel.username
+                                          : 'User'),
                                 style: const TextStyle(
                                   fontSize: 20,
                                   fontWeight: FontWeight.bold,
@@ -128,6 +133,7 @@ class ProfileScreen extends StatelessWidget {
                         );
                       },
                     ),
+                    // Inside ProfileScreen menu items:
                     _buildMenuItem(
                       context,
                       icon: Icons.credit_card_rounded,
@@ -135,7 +141,14 @@ class ProfileScreen extends StatelessWidget {
                       iconColor: const Color(0xFF4CAF50),
                       title: 'Insurance Detail',
                       subtitle: 'Add your insurance info',
-                      onTap: () {},
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const InsuranceDetailScreen(),
+                          ),
+                        );
+                      },
                     ),
                     _buildMenuItem(
                       context,
@@ -144,7 +157,14 @@ class ProfileScreen extends StatelessWidget {
                       iconColor: const Color(0xFFFFB300),
                       title: 'Medical Records',
                       subtitle: 'History about you medical records',
-                      onTap: () {},
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const MedicalRecordsScreen(),
+                          ),
+                        );
+                      },
                     ),
                     _buildMenuItem(
                       context,
@@ -153,7 +173,14 @@ class ProfileScreen extends StatelessWidget {
                       iconColor: const Color(0xFFAB47BC),
                       title: 'Clinic Info',
                       subtitle: 'Information about our Clinic',
-                      onTap: () {},
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const ClinicInfoScreen(),
+                          ),
+                        );
+                      },
                     ),
                     _buildMenuItem(
                       context,
