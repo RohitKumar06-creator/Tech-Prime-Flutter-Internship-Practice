@@ -125,7 +125,7 @@ class ChatViewModel extends ChangeNotifier {
         case ChatFilter.admins:
           return c.role.toLowerCase() == 'admin';
         case ChatFilter.all:
-        default:
+          // default:
           return true;
       }
     }).toList();
